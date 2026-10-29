@@ -3,7 +3,8 @@
 Run `make publish` from a clean checkout after authenticating Docker to GHCR
 with package write access. It builds and tests the frontend, then publishes
 `ghcr.io/screamxy/openmouse:latest` and a commit tag for amd64 and arm64.
-The image revision label records the complete source commit.
+The image revision label records the complete source commit. Publishing runs on
+the development machine and does not update the running server automatically.
 
 Only Caddy, built static files and the license ship in the runtime image.
 No source checkout, Node.js or build tools are needed on the server. The build
@@ -17,7 +18,15 @@ and HTTP port 8080 bound only to host loopback. Terminate HTTPS with Tailscale
 Serve; never enable Funnel. The app requires an origin root and HTTPS for
 WebHID. The mouse is attached to the browser's computer, not the web server.
 
-Hosting configuration and the app index belong to ScreamXY/internal-apps.
-Use `docker compose pull openmouse` and `docker compose up -d --no-deps --wait
-openmouse` in that deployment directory. Retain the previous image digest for
-rollback and verify assets plus real mouse behavior after updating.
+Hosting configuration, deployment paths and the app index belong to the private
+[ScreamXY/internal-apps](https://github.com/ScreamXY/internal-apps) repository.
+On the server, in that deployment directory:
+
+```sh
+docker compose pull openmouse
+docker compose up -d --no-deps --wait openmouse
+```
+
+Retain the running image digest before pulling so it is available for rollback.
+The container health check verifies its local HTTP endpoint. Also verify the
+external HTTPS assets and real mouse behavior after updating.

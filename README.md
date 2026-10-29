@@ -52,17 +52,23 @@ and audit. No companion repository or custom
 Actions variable is needed. The upstream scheduled dependency updaters remain
 disabled on forks so dependency changes can be reviewed manually.
 
-For self-hosting:
+### Self-hosting
 
-```sh
-npm run build
-```
+The fork publishes `ghcr.io/screamxy/openmouse` with `make publish` from a clean
+checkout. The Docker build runs the frontend build, tests and bundle-size check,
+then packages the static output with Caddy for amd64 and arm64. Images are tagged
+with `latest` and the source commit. See [container publishing](docker/README.md)
+for authentication, runtime settings and updates.
 
-For the GHCR image and tailnet deployment, see [container publishing](docker/README.md).
+For a standalone static build, run `npm run build` and serve `dist/` at the root
+of an HTTPS origin. WebHID needs a secure context and a supported Chromium browser
+on the computer connected to the mouse.
 
-The frontend output is `dist/`. The optional Cloudflare functions in `functions/`
-need a compatible host for their endpoints. This repository does not automatically
-deploy a fork or modify the official OpenMouse site.
+The container disables optional analytics and does not include the Cloudflare
+Functions in `functions/`; `/api/*` returns an unavailable response. Publishing
+an image does not deploy it automatically. The private
+[ScreamXY/internal-apps](https://github.com/ScreamXY/internal-apps) repository owns
+the deployed app index and Compose configuration.
 
 ### Bundle budget
 
