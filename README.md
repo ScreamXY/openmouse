@@ -58,6 +58,8 @@ For self-hosting:
 npm run build
 ```
 
+For the GHCR image and tailnet deployment, see [container publishing](docker/README.md).
+
 The frontend output is `dist/`. The optional Cloudflare functions in `functions/`
 need a compatible host for their endpoints. This repository does not automatically
 deploy a fork or modify the official OpenMouse site.

@@ -1,0 +1,19 @@
+{
+    admin off
+    auto_https off
+}
+:8080 {
+    root * /srv
+    encode zstd gzip
+    header Cache-Control "no-cache"
+    import /etc/caddy/security-headers.caddy
+    @private path /.* /server/* /_headers /_redirects
+    respond @private 404
+    handle /api/* {
+        header Content-Type "application/json"
+        respond `{"message":"This optional API is unavailable on this static deployment."}` 503
+    }
+    handle {
+        file_server
+    }
+}
