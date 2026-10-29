@@ -48,6 +48,8 @@ import {
   type GameProfileSnapshot,
 } from "./game-profile-snapshot";
 import { deviceImage } from "../shared/device-images";
+import { logitechProfileControl } from '../features/profiles/logitech-controls';
+import { formatKeycode } from '../features/buttons/logitech-keycodes';
 import { batteryNeedsCharging } from "../shared/battery-icon";
 import {
   isVxeR1SePlusReceiver,
@@ -611,6 +613,8 @@ function buildSnapshot(): ControlSnapshot {
       .map(([, edit]) => ({
         layer: edit.layer,
         button: edit.button,
+        binding: edit.kind === "macro" ? null : typeof edit.binding === "string"
+          ? { kind: "action" as const, action: edit.binding } : { ...edit.binding },
         value: edit.kind === "macro"
           ? "keyboard"
           : typeof edit.binding === "string"
@@ -1469,7 +1473,9 @@ function queueInstantFlash(): void {
     instantFlashQueued = false;
     // The preference can be switched off before this deferred callback runs.
     // In that case leave the change staged for the Apply bar.
-    if (interfacePreferences.instantFlash) void flashPendingChanges();
+    if (interfacePreferences.instantFlash) {
+      void flashPendingChanges();
+    }
   });
 }
 
@@ -5009,13 +5015,19 @@ function confirmDiscardingProfileEdits(target: number | "host"): boolean {
 }
 
 export function openOnboardProfile(sector: number | "host"): void {
-  if (blockedByGameProfileDraft()) return;
-  if (!confirmDiscardingProfileEdits(sector)) return;
+  if (blockedByGameProfileDraft() || sector === editedProfile) {
+    return;
+  }
+  if (!confirmDiscardingProfileEdits(sector)) {
+    return;
+  }
+  // Discard all edits owned by the previous slot, including direct bindings
+  // and macros, so they cannot be applied to the newly opened profile.
+  for (const change of stagedProfileEdits()) {
+    dropPendingChange(change.key);
+  }
+  stagedProfileButtonEdits.clear();
   editedProfile = sector;
-  dropPendingChange(DPI_SLOTS_KEY);
-  dropPendingChange(BUNNY_HOP_KEY);
-  dropPendingChange(PROFILE_RATE_KEY);
-  dropPendingChange(PROFILE_NAME_KEY);
   stagedBunnyHopMs = null;
   stagedProfileRates = { wireless: null, wired: null };
   stagedProfileName = null;
@@ -5083,9 +5095,8 @@ function reportProfileStatus(): void {
   const active = onboardProfiles.find((profile) => profile.isCurrent);
   setOnboardStatus(editedProfile === "host"
     ? "Running live from software. Stored profiles are unchanged."
-    : active
-      ? `Running from ${active.name ?? `slot ${active.sector}`}. Profile contents are read-only for now.`
-      : "Profile contents are read-only for now.");
+    : [active ? st('ctl.runningFromLabel', { label: active.name || st('prof.profileName', { n: active.sector }) }) : null,
+      lastProfileFormat?.writable ? null : st('prof.contentUnverified')].filter(Boolean).join(' '));
 }
 
 export async function applyOnboardMode(mode: "Onboard" | "Host"): Promise<void> {
@@ -5443,6 +5454,12 @@ export async function toggleOnboardProfileEnabled(sector: number, enabled: boole
   }
 }
 
+function logitechControlName(button: number): string {
+  const control = logitechProfileControl(latestDeviceStatus?.name ?? '', button);
+  const name = st(control.label, { n: button + 1 });
+  return control.label === 'controls.button' ? name : `${control.badge} · ${name}`;
+}
+
 export async function applyLogitechButtonAssignment(
   layer: "primary" | "g-shift",
   button: number,
@@ -5451,18 +5468,20 @@ export async function applyLogitechButtonAssignment(
   if (blockedByGameProfileDraft()) return;
   const entry = editedProfileEntry();
   if (!logitechClient() || !entry || settingInProgress) return;
-  const label = typeof binding === "string" ? binding : binding.kind === "keyboard" ? "keyboard shortcut" : "media key";
+  const control = logitechControlName(button);
+  const assignment = formatKeycode(typeof binding === 'string' ? { kind: 'action', action: binding } : binding);
+  const label = `${control} → ${assignment}`;
   const key = `${PROFILE_BUTTON_KEY_PREFIX}-${layer}-${button}`;
   stagedProfileButtonEdits.set(key, { kind: "assignment", layer, button, binding });
   stageChange({
     key,
     group: PROFILE_SECTOR_GROUP,
-    label: `Button ${button + 1} ${label}`,
-    command: `Map ${layer} button ${button + 1} to ${label}`,
-    progress: `Assigning button ${button + 1} to ${label}…`,
+    label,
+    command: `Map ${layer} slot ${button + 1} (${control}) to ${assignment}`,
+    progress: st('controls.assign', { control: label }),
     apply: writeStagedProfileSector,
   });
-  setOnboardStatus(`Button ${button + 1} assignment staged.`);
+  setOnboardStatus(st('common.staged', { v: label }));
 }
 
 export function applyLogitechConsumerAssignment(layer: "primary" | "g-shift", button: number, usage: number): void {
@@ -5486,17 +5505,19 @@ export async function applyLogitechKeyboardSequence(
   if (blockedByGameProfileDraft()) return;
   const entry = editedProfileEntry();
   if (!logitechClient() || !entry || settingInProgress || !steps.length) return;
+  const control = logitechControlName(button);
+  const label = `${control} → ${st('macro.option')} (${st('macro.steps', { n: steps.length })})`;
   const key = `${PROFILE_BUTTON_KEY_PREFIX}-${layer}-${button}`;
   stagedProfileButtonEdits.set(key, { kind: "macro", layer, button, steps });
   stageChange({
     key,
     group: PROFILE_SECTOR_GROUP,
-    label: `Button ${button + 1} ${steps.length}-step macro`,
+    label,
     command: `Map ${layer} button ${button + 1} to a ${steps.length}-step onboard macro`,
-    progress: `Saving ${steps.length}-step macro to button ${button + 1}…`,
+    progress: st('controls.assign', { control: label }),
     apply: writeStagedProfileSector,
   });
-  setOnboardStatus(`Button ${button + 1} macro staged.`);
+  setOnboardStatus(st('common.staged', { v: label }));
 }
 
 export function renameOnboardProfile(sector: number): void {
@@ -7282,6 +7303,7 @@ function previewClient(): LogitechHidppClient {
   };
   // Real prototype: the driver accessors test with instanceof.
   return Object.assign(Object.create(C().LogitechHidppClient.prototype) as LogitechHidppClient, {
+    close: async () => undefined,
     writeActiveProfile: async () => undefined,
     setBunnyHoppingMs: refuse,
     setProfileDpiStages: refuse,
@@ -7343,8 +7365,8 @@ function showSlotsPreview(): void {
     { x: 2400, y: 2400, lod: 2 },
     { x: 3200, y: 3200, lod: 3 },
   ];
-  const normalActions = ["Left click", "Right click", "Middle click", "Back", "Forward", "DPI Shift", "Next DPI", "Cycle profiles"] as const;
-  const shiftedActions = ["Previous profile", "Next profile", "Battery indicator", "Tilt left", "Tilt right", "Default DPI", "Previous DPI", "Disabled"] as const;
+  const normalActions = ["Left click", "Right click", "Middle click", "Back", "DPI Shift", "Forward", "Tilt left", "Tilt right", "Cycle profiles", "Next DPI", "Previous DPI"] as const;
+  const shiftedActions = ["Previous profile", "Next profile", "Battery indicator", "Tilt left", "Tilt right", "Default DPI", "Previous DPI", "Disabled", "Cycle profiles", "Next DPI", "Previous DPI"] as const;
   onboardProfiles = [1, 2, 3].map((index) => ({
     sector: index,
     enabled: index !== 3,
@@ -7558,9 +7580,11 @@ export function start(): void {
     deviceListView = "device";
     emit();
   } else if (previewMode === "slots") {
-    showSlotsPreview();
-    deviceListView = "device";
-    emit();
+    void ensureDriverModules().then(() => {
+      showSlotsPreview();
+      deviceListView = "device";
+      emit();
+    });
   } else if (previewMode !== null && previewMode !== "list") {
     void showFixturePreview(previewMode).then(() => {
       if (latestDeviceStatus !== null) deviceListView = "device";

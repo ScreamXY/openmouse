@@ -15,6 +15,8 @@ concurrency:
 
 jobs:
   update:
+    # Fork dependency updates are reviewed manually.
+    if: github.repository == 'OpenMouse-Project/openmouse'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

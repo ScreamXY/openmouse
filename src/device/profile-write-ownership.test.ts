@@ -5,24 +5,39 @@ import vm from "node:vm";
 import ts from "typescript";
 import * as pending from "./pending-changes.ts";
 import * as snapshots from "./game-profile-snapshot.ts";
+import * as logitechControls from '../features/profiles/logitech-controls.ts';
+import * as logitechKeycodes from '../features/buttons/logitech-keycodes.ts';
 
 function controllerHarness() {
   pending.clearPendingChanges();
   const timers: (() => void)[] = [];
+  const confirmation = { accepted: true, calls: 0 };
   const exports: any = {};
   const mocks = new Map();
+  class ProfileClient {}
+  mocks.set('./driver-classes', {
+    ensureDriverModules() {},
+    driverModules: () => ({ LogitechHidppClient: ProfileClient, capabilitiesForFormat: () => ({ dpiStages: {} }), dpiStageCapabilitiesForOptions: () => null }),
+  });
   const source = readFileSync(new URL("./controller.ts", import.meta.url), "utf8").replaceAll("import.meta.env", "({ DEV: false })") + `
 export function testSelect(client) { clearActiveClients(); clearPendingChanges(); active = client; activeDevice = client.device; latestDeviceStatus = { name: "Same model", dpi: 800, pollingRateHz: 1000, supportedPollingRates: [500,1000] }; dpiOptions = [800,1200,1600,3200]; }
 export function testDisconnect() { clearActiveClients(); clearPendingChanges(); activeDevice = null; latestDeviceStatus = null; }
 export function testReading(value) { refreshInProgress = value; }
+export function testStoredProfileSetup(client, profiles) { testSelect(client); onboardProfiles = profiles; lastProfileFormat = { id: 7, writable: true }; interfacePreferences.instantFlash = false; }
+export function testStoredProfileState() { return { profiles: onboardProfiles, editedProfile, buttonEdits: [...stagedProfileButtonEdits.values()] }; }
 `;
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const localStorage = { getItem: () => null };
-  const context = { exports, structuredClone, __BUILD_CHANNEL__: "stable", __BUILD_ID__: "test", __APP_VERSION__: "test", localStorage, window: { localStorage, setTimeout: (callback: () => void) => { timers.push(callback); return 1; }, clearTimeout() {} }, setTimeout, clearTimeout, console, require: (name: string) => {
+  const context = { exports, structuredClone, __BUILD_CHANNEL__: "stable", __BUILD_ID__: "test", __APP_VERSION__: "test", localStorage, window: { localStorage, confirm: () => { confirmation.calls += 1; return confirmation.accepted; }, setTimeout: (callback: () => void) => { timers.push(callback); return 1; }, clearTimeout() {} }, setTimeout, clearTimeout, console, require: (name: string) => {
     if (name.endsWith("pending-changes")) return pending;
     if (name.endsWith("game-profile-snapshot")) return snapshots;
+    if (name.endsWith('logitech-controls')) { return logitechControls; }
+    if (name.endsWith('logitech-keycodes')) { return logitechKeycodes; }
     if (name.endsWith("interface-preferences")) return { loadInterfacePreferences: () => ({ locale: "en", reducedMotion: false }) };
-    if (name.endsWith("i18n/index")) return { t: (_locale: string, key: string) => key, tp: (_locale: string, key: string) => key };
+    if (name.endsWith('i18n/index')) {
+      const text = (_locale: string, value: string): string => value;
+      return { t: text, tp: text, displayText: text, displayTemplate: text };
+    }
     if (!mocks.has(name)) mocks.set(name, new Proxy({}, { get: (target: any, key) => target[key] ??= function () {} }));
     return mocks.get(name);
   } };
@@ -30,8 +45,45 @@ export function testReading(value) { refreshInProgress = value; }
   const a = { device: {}, readStatus: async () => { throw new Error("fake read denied"); } };
   const b = { device: {}, readStatus: async () => { throw new Error("fake read denied"); } };
   exports.testSelect(a);
-  return { control: exports, a, b, timers, async drain() { for (let i = 0; i < 30; i++) { timers.splice(0).forEach((callback) => callback()); await Promise.resolve(); } } };
+  return { control: exports, a, b, timers, confirmation, ProfileClient, async drain() { for (let i = 0; i < 30; i++) { timers.splice(0).forEach((callback) => callback()); await Promise.resolve(); } } };
 }
+
+function profileHarness() {
+  const h = controllerHarness();
+  const profiles = [1, 3].map((sector) => ({ sector, name: `Profile ${sector}`, crcValid: true, raw: new Uint8Array([sector]), dpiStages: [] }));
+  const calls: unknown[][] = [];
+  const client = Object.assign(new h.ProfileClient(), {
+    device: {},
+    writeActiveProfile: async (...args: unknown[]) => { calls.push(args); },
+    readOnboardProfiles: async () => profiles,
+  });
+  h.control.testStoredProfileSetup(client, profiles);
+  return { ...h, client, profiles, calls };
+}
+
+test('switching profiles discards confirmed button edits and preserves them when cancelled', async () => {
+  const h = profileHarness();
+  h.control.openOnboardProfile(1);
+  await h.control.applyLogitechButtonAssignment('primary', 4, { kind: 'keyboard', key: 0x68, modifiers: 0 });
+  await h.control.applyLogitechKeyboardSequence('g-shift', 4, [{ key: 6, modifiers: 1, delayMs: 0 }]);
+  const staged = pending.pendingChanges().map((change) => change.key);
+  assert.equal(staged.length, 2);
+  h.control.openOnboardProfile(1);
+  assert.equal(h.confirmation.calls, 0);
+  assert.deepEqual(pending.pendingChanges().map((change) => change.key), staged);
+  h.confirmation.accepted = false;
+  h.control.openOnboardProfile(3);
+  assert.equal(h.control.testStoredProfileState().editedProfile, 1);
+  assert.deepEqual(pending.pendingChanges().map((change) => change.key), staged);
+  h.confirmation.accepted = true;
+  h.control.openOnboardProfile(3);
+  assert.equal(h.confirmation.calls, 2);
+  assert.equal(h.control.testStoredProfileState().editedProfile, 3);
+  assert.equal(h.control.testStoredProfileState().buttonEdits.length, 0);
+  assert.equal(pending.pendingChanges().length, 0);
+  assert.equal(await h.control.flashPendingChanges(), 'unchanged');
+  assert.deepEqual(h.calls, []);
+});
 
 test("an abandoned profile write never restores A's staged edits into B", async () => {
   const h = controllerHarness();

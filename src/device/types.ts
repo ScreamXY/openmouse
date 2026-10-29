@@ -5,7 +5,7 @@ import type { KsnakeMacroProfile } from "@openmouse/protocol/ksnake";
 import type { KeychronNapeLayerKeymap } from "@openmouse/protocol/keychron";
 import type { LogitechReprogrammableControl } from "@openmouse/protocol/logitech";
 import type { WallhackCurvePoint, WallhackMacroStep } from "@openmouse/protocol/wallhack";
-import type { DpiStageCapabilities, DpiStagePlan, OnboardProfile } from "@openmouse/protocol/drivers/logitech/onboard-profiles";
+import type { DpiStageCapabilities, DpiStagePlan, LogitechButtonBinding, OnboardProfile } from "@openmouse/protocol/drivers/logitech/onboard-profiles";
 import type { InterfacePreferences } from "../features/settings/interface-preferences";
 import type { PreviewMode } from "./preview/preview-modes";
 import type { DriverTraits } from "./traits";
@@ -116,6 +116,8 @@ export interface StagedProfileButtonAssignment {
   layer: "primary" | "g-shift";
   button: number;
   value: string;
+  /** Null for a macro. Direct bindings stay readable while awaiting Apply changes. */
+  binding: LogitechButtonBinding | null;
 }
 
 export type NapeAssignmentControl =

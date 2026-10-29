@@ -1,41 +1,66 @@
-# OpenMouse
+# OpenMouse keycodes fork
 
-<a href="https://trendshift.io/repositories/103495?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-103495" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/103495/daily?language=TypeScript" alt="OpenMouse-Project%2Fopenmouse | Trendshift" width="250" height="55"/></a>
-<a href="https://osscar.dev/org/openmouse-project" target="_blank" rel="noopener noreferrer"><img src="https://osscar.dev/api/badge?slug=openmouse-project" alt="Featured on OSSCAR" height="55"/></a>
+An independent fork of [OpenMouse](https://github.com/OpenMouse-Project/openmouse)
+with a VIA-style editor for Logitech onboard button assignments. OpenMouse is a
+browser-based control panel for supported gaming mice, including DPI, polling rate
+and profile settings.
 
-<p>
-  <a href="https://github.com/OpenMouse-Project/openmouse/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/OpenMouse-Project/openmouse/ci.yml?branch=main&label=CI" alt="CI"/></a>
-  <a href="https://www.npmjs.com/package/@openmouse/protocol"><img src="https://img.shields.io/github/package-json/dependency-version/OpenMouse-Project/openmouse/@openmouse%2Fprotocol?label=mouse%20protocol" alt="Mouse protocol version"/></a>
-  <a href="https://www.npmjs.com/package/@openmouse/keyboard-protocol"><img src="https://img.shields.io/github/package-json/dependency-version/OpenMouse-Project/openmouse/@openmouse%2Fkeyboard-protocol?label=keyboard%20protocol" alt="Keyboard protocol version"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/OpenMouse-Project/openmouse" alt="License"/></a>
-  <a href="https://github.com/OpenMouse-Project/openmouse/stargazers"><img src="https://img.shields.io/github/stars/OpenMouse-Project/openmouse" alt="Stars"/></a>
-</p>
+## What this fork adds
 
-OpenMouse is a browser-based control panel for supported gaming mice.
+- Direct keycode input such as `KC_F13`, `LCTL(KC_C)` and `HYPR(KC_NO)` for both
+  Normal and G-Shift assignments.
+- A searchable catalogue of Mac shortcuts, media controls, keyboard keys and mouse
+  actions, including Mission Control, Launchpad, Spaces and window switching.
+- Physical G502 X button labels instead of treating storage slots as G-numbers.
 
-Connect a mouse, view its information, and change supported settings such as DPI
-and polling rate without installing a different app for every brand.
+See the [usage and implementation notes](docs/keycode-editor.md) for supported codes
+and test coverage. The G502 X owner confirmed that the physical button labels now match
+the mouse. Profile copying, arbitrary QMK layers, tap-hold behavior and firmware
+commands are not included.
 
-<a href="https://control.openmouse.app/"><img src=".github/assets/control-panel-card.svg" width="520" alt="Open the OpenMouse control panel"/></a>
-
-Works in Chromium-based browsers that support WebHID. Learn more at
-[openmouse.app](https://openmouse.app/).
-
-This branch is deployed as the public development control panel at
-[control.openmouse.app](https://control.openmouse.app/).
+Keep LinearMouse for macOS pointer acceleration, scrolling and universal Back/Forward.
+This fork does not change those settings. Use a Chromium-based browser with WebHID.
+The [official hosted panel](https://control.openmouse.app/) and
+[OpenMouse website](https://openmouse.app/) belong to upstream and do not include this
+fork's changes.
 
 ## Development
 
-```bash
-npm install
+Use Node.js 24 and npm. Only this repository is needed: the app installs the
+published `@openmouse/protocol` library at the exact version in `package.json` and
+`package-lock.json`. No protocol fork or sibling checkout is required.
+
+```sh
+git clone https://github.com/ScreamXY/openmouse.git
+cd openmouse
+npm ci
 npm run dev
 ```
 
-Run the full local check before pushing changes:
+The fork's changes are on `main`. Run all checks before pushing:
 
-```bash
+```sh
 npm run check
+npm run size
+npm audit --audit-level=high
 ```
+
+### GitHub CI
+
+CI installs the pinned npm dependencies and runs the build, tests, bundle checks
+and audit. No companion repository or custom
+Actions variable is needed. The upstream scheduled dependency updaters remain
+disabled on forks so dependency changes can be reviewed manually.
+
+For self-hosting:
+
+```sh
+npm run build
+```
+
+The frontend output is `dist/`. The optional Cloudflare functions in `functions/`
+need a compatible host for their endpoints. This repository does not automatically
+deploy a fork or modify the official OpenMouse site.
 
 ### Bundle budget
 
@@ -95,14 +120,14 @@ Removing a local target also removes its linked mouse profiles; clearing its
 mouse settings leaves the target available. Older Bridges show update guidance
 rather than falling back to a public game request.
 
-## Community
+## Upstream community
 
 Questions, device requests, bug reports, or just want to follow along? Come
 hang out on Discord.
 
 <a href="https://discord.gg/yxC9jzMdw6"><img src="https://control.openmouse.app/api/discord-card" width="520" alt="Join OpenMouse on Discord"/></a>
 
-## Sponsors
+## Upstream sponsors
 
 OpenMouse is supported by [Macroscope](https://macroscope.com/), [Hypertune](https://hypertune.gg/), and [Hone](https://hone.gg/).
 
