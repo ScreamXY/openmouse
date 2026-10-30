@@ -5,8 +5,8 @@ import vm from "node:vm";
 import ts from "typescript";
 import * as pending from "./pending-changes.ts";
 import * as snapshots from "./game-profile-snapshot.ts";
-import * as logitechControls from '../features/profiles/logitech-controls.ts';
-import * as logitechKeycodes from '../features/buttons/logitech-keycodes.ts';
+import * as logitechControls from "../features/profiles/logitech-controls.ts";
+import * as logitechKeycodes from "../features/buttons/logitech-keycodes.ts";
 
 function controllerHarness() {
   pending.clearPendingChanges();
@@ -15,7 +15,7 @@ function controllerHarness() {
   const exports: any = {};
   const mocks = new Map();
   class ProfileClient {}
-  mocks.set('./driver-classes', {
+  mocks.set("./driver-classes", {
     ensureDriverModules() {},
     driverModules: () => ({ LogitechHidppClient: ProfileClient, capabilitiesForFormat: () => ({ dpiStages: {} }), dpiStageCapabilitiesForOptions: () => null }),
   });
@@ -31,10 +31,10 @@ export function testStoredProfileState() { return { profiles: onboardProfiles, e
   const context = { exports, structuredClone, __BUILD_CHANNEL__: "stable", __BUILD_ID__: "test", __APP_VERSION__: "test", localStorage, window: { localStorage, confirm: () => { confirmation.calls += 1; return confirmation.accepted; }, setTimeout: (callback: () => void) => { timers.push(callback); return 1; }, clearTimeout() {} }, setTimeout, clearTimeout, console, require: (name: string) => {
     if (name.endsWith("pending-changes")) return pending;
     if (name.endsWith("game-profile-snapshot")) return snapshots;
-    if (name.endsWith('logitech-controls')) { return logitechControls; }
-    if (name.endsWith('logitech-keycodes')) { return logitechKeycodes; }
+    if (name.endsWith("logitech-controls")) return logitechControls;
+    if (name.endsWith("logitech-keycodes")) return logitechKeycodes;
     if (name.endsWith("interface-preferences")) return { loadInterfacePreferences: () => ({ locale: "en", reducedMotion: false }) };
-    if (name.endsWith('i18n/index')) {
+    if (name.endsWith("i18n/index")) {
       const text = (_locale: string, value: string): string => value;
       return { t: text, tp: text, displayText: text, displayTemplate: text };
     }
@@ -61,11 +61,11 @@ function profileHarness() {
   return { ...h, client, profiles, calls };
 }
 
-test('switching profiles discards confirmed button edits and preserves them when cancelled', async () => {
+test("switching profiles discards confirmed button edits and preserves them when cancelled", async () => {
   const h = profileHarness();
   h.control.openOnboardProfile(1);
-  await h.control.applyLogitechButtonAssignment('primary', 4, { kind: 'keyboard', key: 0x68, modifiers: 0 });
-  await h.control.applyLogitechKeyboardSequence('g-shift', 4, [{ key: 6, modifiers: 1, delayMs: 0 }]);
+  await h.control.applyLogitechButtonAssignment("primary", 4, { kind: "keyboard", key: 0x68, modifiers: 0 });
+  await h.control.applyLogitechKeyboardSequence("g-shift", 4, [{ key: 6, modifiers: 1, delayMs: 0 }]);
   const staged = pending.pendingChanges().map((change) => change.key);
   assert.equal(staged.length, 2);
   h.control.openOnboardProfile(1);
@@ -81,7 +81,7 @@ test('switching profiles discards confirmed button edits and preserves them when
   assert.equal(h.control.testStoredProfileState().editedProfile, 3);
   assert.equal(h.control.testStoredProfileState().buttonEdits.length, 0);
   assert.equal(pending.pendingChanges().length, 0);
-  assert.equal(await h.control.flashPendingChanges(), 'unchanged');
+  assert.equal(await h.control.flashPendingChanges(), "unchanged");
   assert.deepEqual(h.calls, []);
 });
 

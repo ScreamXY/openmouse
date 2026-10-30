@@ -32,7 +32,7 @@ test('search finds human names, short VIA aliases, expressions and localized lab
   assert.equal(searchKeycodes('expose', 'mac', localized)[0].code, 'LCTL(KC_DOWN)');
 });
 
-test('Mac presets encode the requested consumer usages and physical keyboard shortcuts', () => {
+test('Mac presets encode the expected consumer usages and keyboard shortcuts', () => {
   const expected = [
     ['catalog.missionControl', { kind: 'consumer', usage: 0x029f }],
     ['catalog.launchpad', { kind: 'consumer', usage: 0x02a0 }],

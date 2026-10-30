@@ -1,32 +1,43 @@
-# Container publishing
+# Container image
 
-Run `make publish` from a clean checkout after authenticating Docker to GHCR
-with package write access. It builds and tests the frontend, then publishes
-`ghcr.io/screamxy/openmouse:latest` and a commit tag for amd64 and arm64.
-The image revision label records the complete source commit. Publishing runs on
-the development machine and does not update the running server automatically.
+`make publish` builds the image for amd64 and arm64 and pushes it to
+`ghcr.io/screamxy/openmouse` with two tags: `latest` and the short commit hash.
+Run it from a clean checkout, after you log Docker in to GHCR with package write
+access. The image label `org.opencontainers.image.revision` holds the full commit.
+Publishing does not update the server.
 
-Only Caddy, built static files and the license ship in the runtime image.
-No source checkout, Node.js or build tools are needed on the server. The build
-context is allowlisted; local env files and credentials are excluded. Optional
-PostHog analytics is disabled. Cloudflare headers are converted for Caddy at
-build time. Cloudflare API endpoints respond with JSON 503 because their
-backend is not included. External images and fonts can still load upstream.
+The Docker build runs `npm run build`, `npm test` and `npm run size`. The runtime
+image holds only Caddy, the built static files and the license. No Node.js, source
+or build tools are needed on the server.
 
-Run as UID 1000 with a read-only root, writable tmpfs at /data and /config,
-and HTTP port 8080 bound only to host loopback. Terminate HTTPS with Tailscale
-Serve; never enable Funnel. The app requires an origin root and HTTPS for
-WebHID. The mouse is attached to the browser's computer, not the web server.
+- PostHog analytics is off.
+- The security headers come from `functions/_lib/security-headers.js`, the same
+  set that the Cloudflare deployment uses. `security-headers.mjs` turns them into
+  Caddy directives at build time.
+- The Cloudflare Functions in `functions/` are not included, so `/api/*` returns 503.
+- External images and fonts still load from their own hosts.
+- `.dockerignore` is an allowlist, so local env files and credentials stay out
+  of the build.
 
-Hosting configuration, deployment paths and the app index belong to the private
+## Running
+
+Run the container as UID 1000 with a read-only root file system, writable tmpfs
+mounts at `/data` and `/config`, and port 8080 bound to host loopback only. Serve
+HTTPS with Tailscale Serve and never enable Funnel. WebHID needs HTTPS, and the
+app must be served at the origin root. The mouse connects to the browser's
+computer, not to the server.
+
+## Updating the server
+
+The Compose file, deployment paths and app index live in the private
 [ScreamXY/internal-apps](https://github.com/ScreamXY/internal-apps) repository.
-On the server, in that deployment directory:
+In that deployment directory on the server:
 
 ```sh
 docker compose pull openmouse
 docker compose up -d --no-deps --wait openmouse
 ```
 
-Retain the running image digest before pulling so it is available for rollback.
-The container health check verifies its local HTTP endpoint. Also verify the
-external HTTPS assets and real mouse behavior after updating.
+Write down the running image digest before you pull, so you can roll back. The
+container health check only tests local HTTP. After an update, also open the site
+over HTTPS and test the real mouse.

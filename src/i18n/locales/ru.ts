@@ -62,7 +62,6 @@ export const ru: Record<I18nKey, string> = {
   "keycode.editor": "Редактор назначений",
   "keycode.mode": "Коды клавиш",
   "keycode.commands": "Команды и запись",
-  "keycode.title": "Назначить G{n}",
   "keycode.help": "Введите код QMK или шестнадцатеричное значение.",
   "keycode.label": "Код клавиши",
   "keycode.limits": "Только прямые нажатия и сочетания. Для второго слоя используйте G_SHIFT. Слои QMK и разные действия при нажатии и удержании не поддерживаются.",

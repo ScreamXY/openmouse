@@ -62,7 +62,6 @@ export const ar: Record<I18nKey, string> = {
   "keycode.editor": "محرر تعيين الأزرار",
   "keycode.mode": "رموز المفاتيح",
   "keycode.commands": "الأوامر والتسجيل",
-  "keycode.title": "تعيين G{n}",
   "keycode.help": "أدخل رمز QMK أو قيمة سداسية عشرية.",
   "keycode.label": "رمز المفتاح",
   "keycode.limits": "المفاتيح والاختصارات المباشرة فقط. استخدم G_SHIFT للطبقة الثانية. طبقات QMK وإجراءات النقر والضغط المطول غير مدعومة.",

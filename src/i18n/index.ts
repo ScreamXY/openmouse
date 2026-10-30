@@ -62,7 +62,6 @@ const en = {
   "keycode.editor": "Assignment editor",
   "keycode.mode": "Keycodes",
   "keycode.commands": "Commands and recorder",
-  "keycode.title": "Assign G{n}",
   "keycode.help": "Enter a QMK keycode or hex value.",
   "keycode.label": "Keycode",
   "keycode.limits": "Direct keys and shortcuts only. Use G_SHIFT for the second layer. QMK layers and tap/hold are not supported.",

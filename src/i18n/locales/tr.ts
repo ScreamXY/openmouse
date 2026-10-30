@@ -62,7 +62,6 @@ export const tr: Record<I18nKey, string> = {
   "keycode.editor": "Atama düzenleyicisi",
   "keycode.mode": "Tuş kodları",
   "keycode.commands": "Komutlar ve kayıt",
-  "keycode.title": "G{n} ata",
   "keycode.help": "Bir QMK tuş kodu veya onaltılık değer girin.",
   "keycode.label": "Tuş kodu",
   "keycode.limits": "Yalnızca doğrudan tuşlar ve kısayollar. İkinci katman için G_SHIFT kullanın. QMK katmanları ve dokunma/basılı tutma işlemleri desteklenmez.",

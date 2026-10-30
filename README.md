@@ -13,22 +13,18 @@ and profile settings.
   actions, including Mission Control, Launchpad, Spaces and window switching.
 - Physical G502 X button labels instead of treating storage slots as G-numbers.
 
-See the [usage and implementation notes](docs/keycode-editor.md) for supported codes
-and test coverage. The G502 X owner confirmed that the physical button labels now match
-the mouse. Profile copying, arbitrary QMK layers, tap-hold behavior and firmware
+See the [keycode editor notes](docs/keycode-editor.md) for supported codes, limits
+and test coverage. Profile copying, QMK layers, tap-hold behavior and firmware
 commands are not included.
 
-Keep LinearMouse for macOS pointer acceleration, scrolling and universal Back/Forward.
-This fork does not change those settings. Use a Chromium-based browser with WebHID.
-The [official hosted panel](https://control.openmouse.app/) and
-[OpenMouse website](https://openmouse.app/) belong to upstream and do not include this
-fork's changes.
+Use a Chromium-based browser with WebHID. The
+[official hosted panel](https://control.openmouse.app/) and the
+[OpenMouse website](https://openmouse.app/) belong to upstream and do not include
+this fork's changes.
 
 ## Development
 
-Use Node.js 24 and npm. Only this repository is needed: the app installs the
-published `@openmouse/protocol` library at the exact version in `package.json` and
-`package-lock.json`. No protocol fork or sibling checkout is required.
+Use Node.js 24 and npm.
 
 ```sh
 git clone https://github.com/ScreamXY/openmouse.git
@@ -37,7 +33,7 @@ npm ci
 npm run dev
 ```
 
-The fork's changes are on `main`. Run all checks before pushing:
+Run all checks before you push. CI runs the same checks:
 
 ```sh
 npm run check
@@ -45,30 +41,18 @@ npm run size
 npm audit --audit-level=high
 ```
 
-### GitHub CI
-
-CI installs the pinned npm dependencies and runs the build, tests, bundle checks
-and audit. No companion repository or custom
-Actions variable is needed. The upstream scheduled dependency updaters remain
-disabled on forks so dependency changes can be reviewed manually.
+The scheduled dependency updates from upstream only run in the upstream
+repository. In this fork, update dependencies by hand and review them.
 
 ### Self-hosting
 
-The fork publishes `ghcr.io/screamxy/openmouse` with `make publish` from a clean
-checkout. The Docker build runs the frontend build, tests and bundle-size check,
-then packages the static output with Caddy for amd64 and arm64. Images are tagged
-with `latest` and the source commit. See [container publishing](docker/README.md)
-for authentication, runtime settings and updates.
+`make publish` builds the container image and pushes it to
+`ghcr.io/screamxy/openmouse`. See [container image](docker/README.md) for what the
+image contains and how the server is updated.
 
-For a standalone static build, run `npm run build` and serve `dist/` at the root
-of an HTTPS origin. WebHID needs a secure context and a supported Chromium browser
-on the computer connected to the mouse.
-
-The container disables optional analytics and does not include the Cloudflare
-Functions in `functions/`; `/api/*` returns an unavailable response. Publishing
-an image does not deploy it automatically. The private
-[ScreamXY/internal-apps](https://github.com/ScreamXY/internal-apps) repository owns
-the deployed app index and Compose configuration.
+For a plain static build, run `npm run build` and serve `dist/` at the root of an
+HTTPS origin. WebHID needs a secure context and a Chromium browser on the computer
+that the mouse is connected to.
 
 ### Bundle budget
 

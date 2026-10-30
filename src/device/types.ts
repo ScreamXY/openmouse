@@ -116,7 +116,7 @@ export interface StagedProfileButtonAssignment {
   layer: "primary" | "g-shift";
   button: number;
   value: string;
-  /** Null for a macro. Direct bindings stay readable while awaiting Apply changes. */
+  /** Null for a macro. */
   binding: LogitechButtonBinding | null;
 }
 

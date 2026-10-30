@@ -62,7 +62,6 @@ export const es: Record<I18nKey, string> = {
   "keycode.editor": "Editor de asignaciones",
   "keycode.mode": "Códigos de tecla",
   "keycode.commands": "Comandos y grabación",
-  "keycode.title": "Asignar G{n}",
   "keycode.help": "Introduce un código QMK o un valor hexadecimal.",
   "keycode.label": "Código de tecla",
   "keycode.limits": "Solo teclas y atajos directos. Usa G_SHIFT para la segunda capa. No se admiten capas QMK ni acciones distintas al tocar o mantener pulsado.",

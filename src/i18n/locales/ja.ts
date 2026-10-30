@@ -62,7 +62,6 @@ export const ja: Record<I18nKey, string> = {
   "keycode.editor": "割り当てエディター",
   "keycode.mode": "キーコード",
   "keycode.commands": "コマンドと記録",
-  "keycode.title": "G{n} に割り当て",
   "keycode.help": "QMK キーコードまたは16進数を入力してください。",
   "keycode.label": "キーコード",
   "keycode.limits": "直接のキー入力とショートカットのみ対応。第2レイヤーには G_SHIFT を使用します。QMK レイヤーとタップ・ホールド動作には対応していません。",

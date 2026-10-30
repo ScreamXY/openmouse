@@ -62,7 +62,6 @@ export const vi: Record<I18nKey, string> = {
   "keycode.editor": "Trình sửa gán nút",
   "keycode.mode": "Mã phím",
   "keycode.commands": "Lệnh và ghi phím",
-  "keycode.title": "Gán G{n}",
   "keycode.help": "Nhập mã phím QMK hoặc giá trị thập lục phân.",
   "keycode.label": "Mã phím",
   "keycode.limits": "Chỉ hỗ trợ phím và phím tắt trực tiếp. Dùng G_SHIFT cho lớp thứ hai. Không hỗ trợ lớp QMK và thao tác chạm/giữ.",

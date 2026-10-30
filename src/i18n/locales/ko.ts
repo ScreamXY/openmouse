@@ -62,7 +62,6 @@ export const ko: Record<I18nKey, string> = {
   "keycode.editor": "할당 편집기",
   "keycode.mode": "키코드",
   "keycode.commands": "명령 및 녹화",
-  "keycode.title": "G{n} 할당",
   "keycode.help": "QMK 키코드 또는 16진수 값을 입력하세요.",
   "keycode.label": "키코드",
   "keycode.limits": "직접 키 입력과 단축키만 지원합니다. 두 번째 레이어에는 G_SHIFT를 사용하세요. QMK 레이어와 탭/홀드 동작은 지원하지 않습니다.",

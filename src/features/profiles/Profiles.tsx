@@ -1,14 +1,15 @@
 import { displayText } from "../../i18n/index";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { capabilitiesForFormat } from "@openmouse/protocol/drivers/logitech/onboard-profiles";
-import { LOGITECH_BUTTON_ACTIONS, type LogitechButtonAction } from "@openmouse/protocol/drivers/logitech/onboard-profiles";
+import { LOGITECH_BUTTON_ACTIONS, type LogitechButtonAction, type LogitechButtonBinding } from "@openmouse/protocol/drivers/logitech/onboard-profiles";
 import * as control from "../../device/controller";
 import type { ControlSnapshot } from "../../device/types";
 import { hidKeyForCode, shortcutLabel } from "./hid-keys";
-import { KeycodeDialog } from '../buttons/KeycodeDialog';
-import { logitechProfileControl } from './logitech-controls';
-import { formatKeycode } from '../buttons/logitech-keycodes';
-import { bindingFromAssignment } from '../buttons/setup-code';
+import { KeycodeDialog } from "../buttons/KeycodeDialog";
+import { logitechControlTitle, logitechProfileControl } from "./logitech-controls";
+import { formatKeycode } from "../buttons/logitech-keycodes";
+import { bindingFromAssignment } from "../buttons/setup-code";
+import { Segmented } from "../../shared/ui";
 import { t, tp } from "../../i18n/index";
 import { IconActivate, IconDisabled, IconEnabled, IconRefresh, IconRename, IconRunning, IconShare, IconTrash } from "../../shared/icons";
 
@@ -20,8 +21,13 @@ export function Profiles({
   onShareProfile: () => void;
 }): ReactNode {
   const [assignmentLayer, setAssignmentLayer] = useState<"primary" | "g-shift">("primary");
-  const [keycodeMode, setKeycodeMode] = useState(true);
-  const [keycodeButton, setKeycodeButton] = useState<number | null>(null);
+  const [assignmentEditor, setAssignmentEditor] = useState<"keycodes" | "commands">("keycodes");
+  const [keycodeTarget, setKeycodeTarget] = useState<{
+    layer: "primary" | "g-shift";
+    button: number;
+    title: string;
+    initial: LogitechButtonBinding | null;
+  } | null>(null);
   const [shortcutTarget, setShortcutTarget] = useState<{ layer: "primary" | "g-shift"; button: number } | null>(null);
   const [shortcutSteps, setShortcutSteps] = useState<Array<{ key: number; modifiers: number; label: string; delayMs: number }>>([]);
   const [shortcutRecording, setShortcutRecording] = useState(false);
@@ -49,11 +55,10 @@ export function Profiles({
   }, [snapshot.profilesExpanded]);
 
   const locale = snapshot.preferences.locale;
-  const modelName = snapshot.deviceStatus?.name ?? snapshot.status?.name ?? '';
-  const physicalControl = (slot: number): { badge: string; name: string; fullName: string } => {
-    const control = logitechProfileControl(modelName, slot);
+  const physicalControl = (slot: number): { badge: string; name: string; title: string } => {
+    const control = logitechProfileControl(snapshot.deviceStatus?.name ?? "", slot);
     const name = tp(locale, control.label, { n: slot + 1 });
-    return { badge: control.badge, name, fullName: control.label === 'controls.button' ? name : `${control.badge} · ${name}` };
+    return { badge: control.badge, name, title: logitechControlTitle(control, name) };
   };
   const summary = snapshot.profile.summary;
   const hostOpened = snapshot.editedProfile === "host";
@@ -67,9 +72,8 @@ export function Profiles({
     ? profiles?.find((profile) => profile.sector === snapshot.editedProfile) ?? null
     : null;
   const selectedDevice = snapshot.devices.find((device) => device.selected)?.index;
-  const editingDisabled = snapshot.settingInProgress;
   useEffect(() => {
-    setKeycodeButton(null);
+    setKeycodeTarget(null);
   }, [selectedDevice, snapshot.editedProfile, assignmentLayer]);
 
   return (
@@ -119,7 +123,7 @@ export function Profiles({
             id="setup-logitech-profiles"
             className="icon-button profile-setup-button"
             type="button"
-            disabled={editingDisabled}
+            disabled={snapshot.settingInProgress}
             onClick={() => void control.setUpLogitechProfiles()}
           >
             {t(locale, "prof.setUp")}
@@ -132,7 +136,7 @@ export function Profiles({
             type="button"
             aria-label={t(locale, "prof.deleteReset")}
             title={t(locale, "prof.restoreDefaults")}
-            disabled={editingDisabled}
+            disabled={snapshot.settingInProgress}
             onClick={() => void control.resetLogitechProfiles()}
           >
             <IconTrash />
@@ -204,7 +208,7 @@ export function Profiles({
                   const nameable = nameLimit !== null;
                   const running = profile.isCurrent && !hostRunning;
                   const tags = [running ? "active" : null, opened ? "editing" : null].filter(Boolean).join(" · ");
-                  const renameDisabled = locked || !nameable || !contentsWritable || editingDisabled;
+                  const renameDisabled = locked || !nameable || !contentsWritable || snapshot.settingInProgress;
                   const activateDisabled = locked || running || !profile.enabled;
 
                   return (
@@ -258,7 +262,7 @@ export function Profiles({
                       </button>
                       <button
                         type="button"
-                        disabled={locked || editingDisabled}
+                        disabled={locked || snapshot.settingInProgress}
                         title={displayText(locale, locked
                           ? t(locale, "prof.layoutUnverified")
                           : profile.enabled ? t(locale, "prof.disableProfile") : t(locale, "prof.enableProfile"))}
@@ -283,10 +287,16 @@ export function Profiles({
                   <button type="button" role="tab" aria-selected={assignmentLayer === "g-shift"} onClick={() => setAssignmentLayer("g-shift")}>G-Shift</button>
                 </div>
               </div>
-              <div className="keycode-mode segmented" role="group" aria-label={t(locale, 'keycode.editor')}>
-                <button type="button" aria-pressed={keycodeMode} onClick={() => setKeycodeMode(true)}>{t(locale, 'keycode.mode')}</button>
-                <button type="button" aria-pressed={!keycodeMode} onClick={() => setKeycodeMode(false)}>{t(locale, 'keycode.commands')}</button>
-              </div>
+              <Segmented
+                className="keycode-mode"
+                ariaLabel={t(locale, "keycode.editor")}
+                options={[
+                  { value: "keycodes", label: t(locale, "keycode.mode") },
+                  { value: "commands", label: t(locale, "keycode.commands") },
+                ]}
+                value={assignmentEditor}
+                onChange={setAssignmentEditor}
+              />
               <div className="assignment-grid">
                 {(assignmentLayer === "primary" ? openedProfile.buttonAssignments : openedProfile.gShiftAssignments).map((assignment) => {
                   const physical = physicalControl(assignment.button);
@@ -295,22 +305,22 @@ export function Profiles({
                   );
                   const primaryLocked = assignmentLayer === "primary" && assignment.button <= 1;
                   const binding = stagedAssignment
-                    ? stagedAssignment.binding ?? null
+                    ? stagedAssignment.binding
                     : bindingFromAssignment(assignment.action, assignment.raw);
                   return (
-                    <div key={`${assignmentLayer}-${assignment.button}`} data-profile-button={assignment.button} className={`assignment-card${stagedAssignment ? ' is-staged' : ''}`}>
+                    <div key={`${assignmentLayer}-${assignment.button}`} className={`assignment-card${stagedAssignment ? " is-staged" : ""}`}>
                       <span className="assignment-button-number">{physical.badge}</span>
                       <span className="assignment-button-name">{physical.name}</span>
                       <span className="assignment-select-wrap">
-                        {keycodeMode ? <button type="button" className="om-btn assignment-keycode"
-                          disabled={editingDisabled || primaryLocked}
-                          aria-label={tp(locale, 'controls.assign', { control: physical.fullName })}
-                          onClick={() => setKeycodeButton(assignment.button)}>
-                          {binding ? <code dir="ltr">{formatKeycode(binding)}</code> : t(locale, 'prof.customPreserved')}
+                        {assignmentEditor === "keycodes" ? <button type="button" className="om-btn assignment-keycode"
+                          disabled={snapshot.settingInProgress || primaryLocked}
+                          aria-label={tp(locale, "controls.assign", { control: physical.title })}
+                          onClick={() => setKeycodeTarget({ layer: assignmentLayer, button: assignment.button, title: physical.title, initial: binding })}>
+                          {binding ? <code dir="ltr">{formatKeycode(binding)}</code> : t(locale, "prof.customPreserved")}
                         </button> : <select
-                          aria-label={tp(locale, 'controls.assign', { control: physical.fullName })}
+                          aria-label={tp(locale, "controls.assign", { control: physical.title })}
                           value={stagedAssignment?.value ?? assignment.action}
-                          disabled={editingDisabled || primaryLocked}
+                          disabled={snapshot.settingInProgress || primaryLocked}
                           title={primaryLocked
                             ? "Primary click buttons cannot be remapped to prevent losing control of the mouse."
                             : assignment.action === "Custom" ? `Unknown mapping: ${assignment.raw.map((byte) => byte.toString(16).padStart(2, "0")).join(" ")}` : undefined}
@@ -348,18 +358,17 @@ export function Profiles({
                   );
                 })}
               </div>
-              {keycodeButton !== null ? (() => {
-                const stored = (assignmentLayer === 'primary' ? openedProfile.buttonAssignments : openedProfile.gShiftAssignments)
-                  .find((assignment) => assignment.button === keycodeButton);
-                const staged = snapshot.stagedProfileButtonAssignments.find((assignment) => assignment.layer === assignmentLayer && assignment.button === keycodeButton);
-                const initial = staged ? staged.binding ?? null : stored ? bindingFromAssignment(stored.action, stored.raw) : null;
-                return <KeycodeDialog key={`${selectedDevice}-${openedProfile.sector}-${assignmentLayer}-${keycodeButton}`}
-                  locale={locale} button={keycodeButton} initial={initial} controlLabel={physicalControl(keycodeButton).fullName}
-                  disabled={editingDisabled || !stored || (assignmentLayer === 'primary' && keycodeButton <= 1)}
-                  onAssign={(binding) => { void control.applyLogitechButtonAssignment(assignmentLayer, keycodeButton, binding); }}
-                  onClose={() => setKeycodeButton(null)} />;
-              })() : null}
-              <small className="setting-note">{t(locale, 'controls.note')}</small>
+              {keycodeTarget ? (
+                <KeycodeDialog
+                  locale={locale}
+                  controlTitle={keycodeTarget.title}
+                  initial={keycodeTarget.initial}
+                  disabled={snapshot.settingInProgress}
+                  onAssign={(binding) => void control.applyLogitechButtonAssignment(keycodeTarget.layer, keycodeTarget.button, binding)}
+                  onClose={() => setKeycodeTarget(null)}
+                />
+              ) : null}
+              <small className="setting-note">{t(locale, "controls.note")}</small>
               <small className="setting-note">{displayText(locale, "Changes are stored in this onboard profile. Existing custom macros are preserved byte-for-byte.")}</small>
               {shortcutTarget ? (
                 <div className="shortcut-dialog-backdrop" role="presentation" onMouseDown={(event) => {

@@ -62,7 +62,6 @@ export const pt: Record<I18nKey, string> = {
   "keycode.editor": "Editor de atribuições",
   "keycode.mode": "Códigos de tecla",
   "keycode.commands": "Comandos e gravação",
-  "keycode.title": "Atribuir G{n}",
   "keycode.help": "Introduza um código QMK ou um valor hexadecimal.",
   "keycode.label": "Código de tecla",
   "keycode.limits": "Apenas teclas e atalhos diretos. Use G_SHIFT para a segunda camada. Camadas QMK e ações diferentes ao tocar ou manter premido não são suportadas.",

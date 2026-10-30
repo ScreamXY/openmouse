@@ -62,7 +62,6 @@ export const fr: Record<I18nKey, string> = {
   "keycode.editor": "Éditeur des affectations",
   "keycode.mode": "Codes de touche",
   "keycode.commands": "Commandes et enregistrement",
-  "keycode.title": "Affecter G{n}",
   "keycode.help": "Saisissez un code QMK ou une valeur hexadécimale.",
   "keycode.label": "Code de touche",
   "keycode.limits": "Touches et raccourcis directs uniquement. Utilisez G_SHIFT pour la seconde couche. Les couches QMK et les actions appui court/long ne sont pas prises en charge.",

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { LogitechButtonBinding } from '@openmouse/protocol/drivers/logitech/onboard-profiles';
 import type { InterfaceLocale } from '../settings/interface-preferences';
 import { t, tp, type I18nKey } from '../../i18n/index';
-import { formatKeycode, KEYCODE_NAMES, parseKeycode } from './logitech-keycodes';
+import { formatKeycode, KEYCODE_MAX_LENGTH, KEYCODE_NAMES, parseKeycode } from './logitech-keycodes';
 import { searchKeycodes, type KeycodeCategory, type KeycodeChoice } from './keycode-catalogue';
 
 const categories: Array<[KeycodeCategory | 'all', I18nKey]> = [
@@ -10,14 +10,13 @@ const categories: Array<[KeycodeCategory | 'all', I18nKey]> = [
   ['keyboard', 'home.keyboard'], ['mouse', 'home.mouse'], ['special', 'catalog.special'],
 ];
 
-export function KeycodeDialog({ locale, button, initial, disabled, onAssign, onClose, controlLabel }: {
+export function KeycodeDialog({ locale, controlTitle, initial, disabled, onAssign, onClose }: {
   locale: InterfaceLocale;
-  button: number;
+  controlTitle: string;
   initial: LogitechButtonBinding | null;
   disabled: boolean;
   onAssign: (binding: LogitechButtonBinding) => void;
   onClose: () => void;
-  controlLabel?: string;
 }): ReactNode {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -56,14 +55,14 @@ export function KeycodeDialog({ locale, button, initial, disabled, onAssign, onC
         }
       }}>
         <header className="om-dialog-head">
-          <h2 id={`${id}-title`}>{tp(locale, 'controls.assign', { control: controlLabel ?? tp(locale, 'controls.button', { n: button + 1 }) })}</h2>
+          <h2 id={`${id}-title`}>{tp(locale, 'controls.assign', { control: controlTitle })}</h2>
           <button type="button" className="om-icon-btn" onClick={onClose} aria-label={t(locale, 'common.close')}>×</button>
         </header>
         <p className="setting-description" id={`${id}-help`}>{t(locale, 'keycode.help')}</p>
         <label className="keycode-field" htmlFor={`${id}-input`}>
           <span>{t(locale, 'keycode.label')}</span>
           <input ref={input} id={`${id}-input`} value={text} list={`${id}-names`} dir="ltr"
-            autoComplete="off" autoCapitalize="off" spellcheck={false} maxLength={256}
+            autoComplete="off" autoCapitalize="off" spellcheck={false} maxLength={KEYCODE_MAX_LENGTH}
             aria-invalid={Boolean(text && result.error)} aria-describedby={`${id}-help ${id}-result`}
             onInput={(event) => setText(event.currentTarget.value)} />
         </label>

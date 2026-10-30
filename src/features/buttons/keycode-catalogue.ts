@@ -5,8 +5,8 @@ export type KeycodeCategory = 'mac' | 'media' | 'keyboard' | 'mouse' | 'special'
 export interface KeycodeChoice {
   code: string;
   category: KeycodeCategory;
-  label?: I18nKey;
-  glyph?: string;
+  label: I18nKey | null;
+  glyph: string | null;
   aliases: string[];
 }
 
@@ -59,7 +59,7 @@ for (const [code, category, label] of presets) {
   if (!binding) {
     throw new Error(`Invalid catalogue preset: ${code}`);
   }
-  choices.set(formatKeycode(binding), { code, category, label, aliases: [code] });
+  choices.set(formatKeycode(binding), { code, category, label, glyph: null, aliases: [code] });
 }
 for (const code of KEYCODE_NAMES) {
   const binding = parseKeycode(code).binding;
@@ -74,8 +74,8 @@ for (const code of KEYCODE_NAMES) {
   }
   const key = code.replace(/^KC_/, '');
   choices.set(canonical, {
-    code: canonical, category: binding.kind === 'keyboard' ? 'keyboard' : 'special', aliases: [code],
-    glyph: glyphs[key] ?? (/^(?:[A-Z0-9]|F\d+)$/.test(key) ? key : undefined),
+    code: canonical, category: binding.kind === 'keyboard' ? 'keyboard' : 'special', aliases: [code], label: null,
+    glyph: glyphs[key] ?? (/^(?:[A-Z0-9]|F\d+)$/.test(key) ? key : null),
   });
 }
 
@@ -85,7 +85,7 @@ for (const [symbol, key] of Object.entries({ '~': 'GRAVE', '!': '1', '@': '2', '
   '{': 'LEFT_BRACKET', '}': 'RIGHT_BRACKET', '|': 'BACKSLASH', ':': 'SEMICOLON', '"': 'QUOTE',
   '<': 'COMMA', '>': 'DOT', '?': 'SLASH' })) {
   const code = `LSFT(KC_${key})`;
-  choices.set(code, { code, category: 'keyboard', glyph: symbol, aliases: [code] });
+  choices.set(code, { code, category: 'keyboard', label: null, glyph: symbol, aliases: [code] });
 }
 
 export const KEYCODE_CATALOGUE: readonly KeycodeChoice[] = [...choices.values()];

@@ -62,7 +62,6 @@ export const de: Record<I18nKey, string> = {
   "keycode.editor": "Belegungseditor",
   "keycode.mode": "Keycodes",
   "keycode.commands": "Befehle und Aufnahme",
-  "keycode.title": "G{n} belegen",
   "keycode.help": "QMK-Keycode oder Hexwert eingeben.",
   "keycode.label": "Keycode",
   "keycode.limits": "Nur direkte Tasten und Tastenkombinationen. G_SHIFT aktiviert die zweite Ebene. QMK-Ebenen und Tap/Hold werden nicht unterstützt.",

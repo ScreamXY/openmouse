@@ -7,13 +7,7 @@
     encode zstd gzip
     header Cache-Control "no-cache"
     import /etc/caddy/security-headers.caddy
-    @private path /.* /server/* /_headers /_redirects
-    respond @private 404
-    handle /api/* {
-        header Content-Type "application/json"
-        respond `{"message":"This optional API is unavailable on this static deployment."}` 503
-    }
-    handle {
-        file_server
-    }
+    # The Cloudflare Functions behind /api/* are not part of the image.
+    respond /api/* 503
+    file_server
 }

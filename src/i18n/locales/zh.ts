@@ -62,7 +62,6 @@ export const zh: Record<I18nKey, string> = {
   "keycode.editor": "按键分配编辑器",
   "keycode.mode": "键码",
   "keycode.commands": "命令与录制",
-  "keycode.title": "分配 G{n}",
   "keycode.help": "输入 QMK 键码或十六进制值。",
   "keycode.label": "键码",
   "keycode.limits": "仅支持直接按键和快捷键。使用 G_SHIFT 切换到第二层。不支持 QMK 层和轻触/长按操作。",

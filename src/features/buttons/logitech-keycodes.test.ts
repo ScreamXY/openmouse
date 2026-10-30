@@ -85,7 +85,7 @@ test('every direct keyboard byte and modifier mask can be reopened without chang
   }
 });
 
-test('the existing profile codec stores direct keys, Hyper and Mission Control in exactly one slot', () => {
+test('the profile codec stores direct keys, Hyper and Mission Control in exactly one slot', () => {
   for (const format of [2, 6, 7]) {
     for (const layer of ['primary', 'g-shift'] as const) {
       const table = format < 6 ? (layer === 'primary' ? 0x20 : 0x60) : (layer === 'primary' ? 0x30 : 0x70);

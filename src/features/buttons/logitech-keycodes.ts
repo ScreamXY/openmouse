@@ -15,7 +15,11 @@ const CONSUMER_KEYS = [
   ['ASSISTANT', 0x01cb], ['MISSION_CONTROL', 0x029f], ['LAUNCHPAD', 0x02a0],
 ] as const;
 
+export const KEYCODE_MAX_LENGTH = 256;
+
+// Both lists follow the HID modifier bit order.
 const MODIFIER_NAMES = ['LEFT_CTRL', 'LEFT_SHIFT', 'LEFT_ALT', 'LEFT_GUI', 'RIGHT_CTRL', 'RIGHT_SHIFT', 'RIGHT_ALT', 'RIGHT_GUI'];
+const MODIFIER_WRAPPERS = ['LCTL', 'LSFT', 'LALT', 'LGUI', 'RCTL', 'RSFT', 'RALT', 'RGUI'];
 const WRAPPERS: Readonly<Record<string, number>> = {
   LCTL: 1, C: 1, LSFT: 2, S: 2, LALT: 4, LOPT: 4, A: 4,
   LGUI: 8, LCMD: 8, LWIN: 8, G: 8,
@@ -144,7 +148,7 @@ function parse(text: string, depth: number): KeycodeResult {
 
 /** Names and hex use QMK values; raw HID values require an explicit HID_* wrapper. */
 export function parseKeycode(input: string): KeycodeResult {
-  if (input.length > 256 || !input.trim()) {
+  if (input.length > KEYCODE_MAX_LENGTH || !input.trim()) {
     return fail('keycode.invalid');
   }
   return parse(input.trim().toUpperCase(), 0);
@@ -169,7 +173,7 @@ export function formatKeycode(binding: LogitechButtonBinding): string {
     return binding.action;
   }
   let name = canonical.get(identity({ kind: 'keyboard', key: binding.key, modifiers: 0 })) ?? `HID_KEY(${hex(binding.key, 2)})`;
-  for (const [bit, wrapper] of ['LCTL', 'LSFT', 'LALT', 'LGUI', 'RCTL', 'RSFT', 'RALT', 'RGUI'].entries()) {
+  for (const [bit, wrapper] of MODIFIER_WRAPPERS.entries()) {
     if (binding.modifiers & (1 << bit)) {
       name = `${wrapper}(${name})`;
     }

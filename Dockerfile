@@ -7,7 +7,7 @@ ARG REVISION
 ENV CF_PAGES_COMMIT_SHA=$REVISION VITE_POSTHOG_KEY="" VITE_POSTHOG_HOST=""
 RUN npm run build && npm test && npm run size \
     && node docker/security-headers.mjs \
-    && rm -rf dist/server dist/_headers dist/_redirects
+    && rm -rf dist/server dist/_headers
 
 FROM caddy:2-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
 RUN setcap -r /usr/bin/caddy
